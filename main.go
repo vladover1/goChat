@@ -4,7 +4,14 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"os"
 )
+
+func check(e error) {
+	if e != nil {
+		panic(e)
+	}
+}
 
 func main() {
 
@@ -18,6 +25,19 @@ func main() {
 		tmpl.Execute(w, hi)
 	})
 
-	fmt.Println("We are alive on :8080")
+	dat, err := os.ReadFile("goChat/goChat/static/login.html")
+	check(err)
+	fmt.Print(string(dat))
+
+	f, err := os.Open("goChat/goChat/static/login.html")
+	check(err)
+
+	b1 := make([]byte, 15)
+	n1, err := f.Read(b1)
+	check(err)
+	fmt.Printf("%d bytes: %s\n", n1, string(b1[:n1]))
+
+	f.Close()
+
 	http.ListenAndServe(":8080", nil)
 }
