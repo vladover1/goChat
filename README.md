@@ -1,0 +1,6 @@
+# goChat
+
+```
+# go build
+# ./goChat
+```
