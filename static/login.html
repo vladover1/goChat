@@ -10,7 +10,11 @@
     <h1>Login</h1>
     <form action="/login" method="POST" >
         <p><input name="login"> <input type="password" name="pass"></p>
-        <p><input type="submit"></p>  
+        <p><input type="submit"></p>
+        <div>
+            <h1>Hello, {{ .userAgent }}!</h1>
+            <p>If you see this, then go:embed worked!</p>
+        </div>
     <p>Information : {{ . }}</p>
        </form>
 </body> 
