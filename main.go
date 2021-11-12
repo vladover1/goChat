@@ -1,19 +1,40 @@
 package main
 
 import (
+	"context"
 	"embed"
 	"html/template"
 	"log"
 	"net/http"
+
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var (
 	//go:embed static
 	res   embed.FS
 	pages = map[string]string{
-		"/": "./static/login.html",
+		"/": "static/login.html",
 	}
 )
+
+var collection *mongo.Collection
+var ctx = context.TODO()
+
+func init() {
+	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017/")
+	client, err := mongo.Connect(ctx, clientOptions)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = client.Ping(ctx, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	collection = client.Database("register").Collection("signin")
+}
 
 func main() {
 
@@ -39,6 +60,7 @@ func main() {
 			return
 		}
 	})
+
 	http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Method: ", r.Method)
 
@@ -57,7 +79,10 @@ func main() {
 
 		tmpl.Execute(w, hi)
 	})
-	http.FileServer(http.FS(res))
+
+	http.HandleFunc("/signin", func(w http.ResponseWriter, r *http.Request) {
+
+	})
 
 	log.Println("Listen and serve at http://localhost:8080")
 	http.ListenAndServe(":8080", nil)
