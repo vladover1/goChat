@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"embed"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
@@ -81,6 +82,16 @@ func main() {
 	})
 
 	http.HandleFunc("/signin", func(w http.ResponseWriter, r *http.Request) {
+		insertResult, err := collection.InsertOne(context.TODO(), r.FormValue("login"))
+		if err != nil {
+			log.Fatal(err)
+		}
+		insertResull, err := collection.InsertOne(context.TODO(), r.FormValue("pass"))
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println("Inserted a single document: ", insertResult)
+		fmt.Println("Inserted a single document: ", insertResull)
 
 	})
 
