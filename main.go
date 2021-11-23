@@ -24,7 +24,7 @@ var collection *mongo.Collection
 var ctx = context.TODO()
 
 func init() {
-	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017/")
+	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
 		log.Fatal(err)
@@ -82,6 +82,9 @@ func main() {
 	})
 
 	http.HandleFunc("/signin", func(w http.ResponseWriter, r *http.Request) {
+		tmpl, _ := template.ParseFiles("./static/signin.html")
+
+		tmpl.Execute(w, "")
 		insertResult, err := collection.InsertOne(context.TODO(), r.FormValue("login"))
 		if err != nil {
 			log.Fatal(err)
