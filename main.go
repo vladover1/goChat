@@ -3,11 +3,12 @@ package main
 import (
 	"context"
 	"embed"
-	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -16,7 +17,7 @@ var (
 	//go:embed static
 	res   embed.FS
 	pages = map[string]string{
-		"/": "static/login.html",
+		"/": "static/signin.html",
 	}
 )
 
@@ -24,7 +25,9 @@ var collection *mongo.Collection
 var ctx = context.TODO()
 
 func init() {
-	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
+	log.Println("connect mongoDB")
+	mongoURL := "mongodb://root:rootpassword@127.0.8.1.27017/admin"
+	clientOptions := options.Client().ApplyURI(mongoURL)
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
 		log.Fatal(err)
@@ -35,12 +38,30 @@ func init() {
 		log.Fatal(err)
 	}
 	collection = client.Database("register").Collection("signin")
+
+}
+
+type User struct{
+	//ID 			primitive.ObjectID 		'bson:"_id" json:"id,omitempty"'
+	Login 		string 					'bson:"login'
+	Password 	string 					'bson:"password"'
+}
+
+func getUserByLogin(login string)(User error){
+   var u User 
+   if err := collection.FindOne(ctx, bson.M{
+	   "login": login,
+   }).Decode(&u); err != nil{
+	  return u, err
+   } 
+   return u, nil
+
 }
 
 func main() {
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Hello. Go to <a href='/login'>/login</a>"))
+		w.Write([]byte("Hello. Go to <a href='/signin'>/signin</a>"))
 		page, ok := pages[r.URL.Path]
 		if !ok {
 			w.WriteHeader(http.StatusNotFound)
@@ -62,10 +83,10 @@ func main() {
 		}
 	})
 
-	http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/signin", func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Method: ", r.Method)
-
-		hi := "nothing"
+		tmpl, _ := template.ParseFiles("./static/signin.html")
+		tmplVar := map[string]string 
 
 		if r.Method == "POST" {
 			r.ParseForm()
@@ -73,29 +94,65 @@ func main() {
 			log.Println("Login: ", r.FormValue("login"))
 			log.Println("Password: ", r.FormValue("pass"))
 
-			hi = "this is POST request"
+
+			u, err := getUserByLogin(r.FormValue("login"))
+			if err !=nil {
+				tmplVar["error"]="user not found"	
+		      tmpl.Execute(w, tmplVar)
+			  return
+			}
+			if (u.Password != r.FormValue("pass")){
+				tmplVar["error"]="user not found"	
+				tmpl.Execute(w, tmplVar)
+				return
+			}
+
+			http.Redirect(w,r, "/allok", 302)
 		}
+		tmpl.Execute(w, tmplVar)
 
-		tmpl, _ := template.ParseFiles("./static/login.html")
+		
 
-		tmpl.Execute(w, hi)
+		
 	})
 
-	http.HandleFunc("/signin", func(w http.ResponseWriter, r *http.Request) {
-		tmpl, _ := template.ParseFiles("./static/signin.html")
+	http.HandleFunc("/signup", func(w http.ResponseWriter, r *http.Request) {
+		tmpl, _ := template.ParseFiles("./static/signup.html")
 
-		tmpl.Execute(w, "")
-		insertResult, err := collection.InsertOne(context.TODO(), r.FormValue("login"))
-		if err != nil {
-			log.Fatal(err)
-		}
-		insertResull, err := collection.InsertOne(context.TODO(), r.FormValue("pass"))
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println("Inserted a single document: ", insertResult)
-		fmt.Println("Inserted a single document: ", insertResull)
+		tempVar := map[string]string{}
+		if r.Method == "POST" {
+			r.ParseForm()
 
+			login := r.FormValue("login")
+			pass := r.FormValue("pass")
+			pass2 := r.FormValue("pass")
+
+			if pass != pass2 {
+				tempVar["error"] = "password not equal"
+				tmpl.Execute(w, tempVar)
+				return
+			}
+
+			existedUser, _ := getUserByLogin(login)
+			if existedUser.Login == login {
+				tempVar["error"]="user login is not unique"
+				tmpl.Execute(w, tempVar)
+				return
+			}
+
+			_, err := collection.InsertOne(context.TODO(), User{
+				Login: login,
+				Password: pass,
+			})
+			if err != nil {
+				panic(err)
+			}
+
+			http.Redirect(w,r, "/", 302)
+			return
+
+		}
+		tmpl.Execute(w, tempVar)
 	})
 
 	log.Println("Listen and serve at http://localhost:8080")
