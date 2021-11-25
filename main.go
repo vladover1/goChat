@@ -8,7 +8,6 @@ import (
 	"net/http"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -41,20 +40,25 @@ func init() {
 
 }
 
-type User struct{
+type User struct {
 	//ID 			primitive.ObjectID 		'bson:"_id" json:"id,omitempty"'
-	Login 		string 					'bson:"login'
-	Password 	string 					'bson:"password"'
+	Login    string `bson:"login`
+	Password string `bson:"password"`
 }
 
-func getUserByLogin(login string)(User error){
-   var u User 
-   if err := collection.FindOne(ctx, bson.M{
-	   "login": login,
-   }).Decode(&u); err != nil{
-	  return u, err
-   } 
-   return u, nil
+func getUserByLogin(login string) (User, error) {
+	var u User // User is not a type
+	if err := collection.FindOne(ctx, bson.M{
+		"login": login,
+	}).Decode(&u); err != nil {
+		return u, err //too many arguments to return
+		// have (error, error)
+		// want (error)
+
+	}
+	return u, nil // too many arguments to return
+	//have (error, nil)
+	//want (error)
 
 }
 
@@ -86,7 +90,7 @@ func main() {
 	http.HandleFunc("/signin", func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Method: ", r.Method)
 		tmpl, _ := template.ParseFiles("./static/signin.html")
-		tmplVar := map[string]string 
+		var tmplVar = map[string]string{}
 
 		if r.Method == "POST" {
 			r.ParseForm()
@@ -94,26 +98,22 @@ func main() {
 			log.Println("Login: ", r.FormValue("login"))
 			log.Println("Password: ", r.FormValue("pass"))
 
-
 			u, err := getUserByLogin(r.FormValue("login"))
-			if err !=nil {
-				tmplVar["error"]="user not found"	
-		      tmpl.Execute(w, tmplVar)
-			  return
+			if err != nil {
+				tmplVar["error"] = "user not found"
+				tmpl.Execute(w, tmplVar)
+				return
 			}
-			if (u.Password != r.FormValue("pass")){
-				tmplVar["error"]="user not found"	
+			if u.Password != r.FormValue("pass") {
+				tmplVar["error"] = "user not found"
 				tmpl.Execute(w, tmplVar)
 				return
 			}
 
-			http.Redirect(w,r, "/allok", 302)
+			http.Redirect(w, r, "/allok", 302)
 		}
 		tmpl.Execute(w, tmplVar)
 
-		
-
-		
 	})
 
 	http.HandleFunc("/signup", func(w http.ResponseWriter, r *http.Request) {
@@ -135,20 +135,20 @@ func main() {
 
 			existedUser, _ := getUserByLogin(login)
 			if existedUser.Login == login {
-				tempVar["error"]="user login is not unique"
+				tempVar["error"] = "user login is not unique"
 				tmpl.Execute(w, tempVar)
 				return
 			}
 
 			_, err := collection.InsertOne(context.TODO(), User{
-				Login: login,
+				Login:    login,
 				Password: pass,
 			})
 			if err != nil {
 				panic(err)
 			}
 
-			http.Redirect(w,r, "/", 302)
+			http.Redirect(w, r, "/", 302)
 			return
 
 		}
