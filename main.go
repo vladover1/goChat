@@ -25,40 +25,35 @@ var ctx = context.TODO()
 
 func init() {
 	log.Println("connect mongoDB")
-	mongoURL := "mongodb://root:rootpassword@127.0.8.1.27017/admin"
+	mongoURL := "mongodb://localhost:27017/admin"
 	clientOptions := options.Client().ApplyURI(mongoURL)
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	err = client.Ping(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	collection = client.Database("register").Collection("signin")
 
 }
 
 type User struct {
-	//ID 			primitive.ObjectID 		'bson:"_id" json:"id,omitempty"'
-	Login    string `bson:"login`
+	Login    string `bson:"login"`
 	Password string `bson:"password"`
 }
 
 func getUserByLogin(login string) (User, error) {
-	var u User // User is not a type
+	var u User
 	if err := collection.FindOne(ctx, bson.M{
 		"login": login,
 	}).Decode(&u); err != nil {
-		return u, err //too many arguments to return
-		// have (error, error)
-		// want (error)
+		return u, err
 
 	}
-	return u, nil // too many arguments to return
-	//have (error, nil)
-	//want (error)
+	return u, nil
 
 }
 
