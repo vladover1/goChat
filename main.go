@@ -59,6 +59,22 @@ func getUserByLogin(login string) (User, error) {
 
 func main() {
 
+	// log.SetFlags(log.Ltime | log.Lshortfile)
+	// //
+	// // Parse command line
+	// //
+	// listenUrl := flag.String("url", "localhost:3000", "Host/port on which to run websocket listener")
+	// mongoUrl := flag.String("mongo", "localhost", "URL of MongoDB server")
+	// flag.Parse()
+	// // Extract DB name from DB URL, if present
+	// dbName := "tokenizer" // If no DB name specified, use "tokenizer"
+	// switch _, auth, _, err := mgourl.ParseURL(*mongoUrl); true {
+	// case err != nil:
+	// 	log.Fatal("Could not parse MongoDB URL:", err)
+	// case auth.Db != "":
+	// 	dbName = auth.Db
+	// }
+
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Hello. Go to <a href='/signin'>/signin</a>"))
 		page, ok := pages[r.URL.Path]
